@@ -8,32 +8,18 @@
 </head>
 <body>
   <aside class="side-panel how-panel" id="howPanel" aria-hidden="true">
-    <button class="panel-close" type="button" data-close-panel="how" aria-label="How to Play panelini kapat">
+    <button class="panel-close" type="button" data-close-panel="how" aria-label="Nasıl Oynanır panelini kapat">
       ×
     </button>
-  </aside>
-
-  <aside class="side-panel settings-panel" id="settingsPanel" aria-hidden="true">
-    <button class="panel-close" type="button" data-close-panel="settings" aria-label="Settings panelini kapat">
-      ×
-    </button>
-    <div class="settings-group">
-      <label class="sort-label" for="cardSortSelect">Kart sayılarını sırala</label>
-      <select class="sort-select" id="cardSortSelect" aria-label="Kart sayılarını sırala">
-        <option value="random">Karışık</option>
-        <option value="asc">↗ Düşükten yükseğe</option>
-        <option value="desc">↘ Yüksekten düşüğe</option>
-      </select>
-    </div>
   </aside>
 
   <main class="app-shell">
     <header class="topbar">
       <button class="main-menu-button how-button" id="openHowPanel" type="button" aria-controls="howPanel" aria-expanded="false">
-        How to Play
+        <span class="menu-button-label">Nasıl Oynanır ?</span>
       </button>
-      <button class="main-menu-button settings-button" id="openSettingsPanel" type="button" aria-controls="settingsPanel" aria-expanded="false">
-        Settings
+      <button class="main-menu-button language-button" id="languageButton" type="button" aria-label="Dil seçeneği" data-language="tr">
+        TR
       </button>
     </header>
 
@@ -42,11 +28,6 @@
         <div class="showcase-glass"></div>
       </div>
       <div class="slider-panel">
-        <div class="selected-count">
-          <span id="selectedCount">1</span>
-          <span>kart</span>
-        </div>
-
         <label class="slider-label" for="cardSlider">Kart adedi</label>
         <input
           id="cardSlider"
@@ -78,11 +59,8 @@
     <section class="cards-section" aria-label="Oluşturulan kartlar">
       <div class="cards-grid" id="cardsGrid" aria-live="polite"></div>
       <div class="round-actions is-hidden" id="roundActions">
-        <button class="menu-button" id="mainMenuButton" type="button">
-          Ana Menü
-        </button>
         <button class="draw-button secondary-draw-button" id="rowDrawButton" type="button" disabled>
-          1 Satır Görüntüle
+          Bir Kısmını Görüntüle
         </button>
         <button class="draw-button" id="drawButton" type="button" disabled>
           Tüm Topları Görüntüle

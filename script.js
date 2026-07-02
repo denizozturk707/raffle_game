@@ -3,6 +3,8 @@ const NUMBERS_PER_CARD = 7;
 const MIN_NUMBER = 10;
 const MAX_NUMBER = 99;
 const KARO_REVEAL_STEPS = [6, 9, 6, 7, 6, 9, 5, 1];
+const TOMBALA_NUMBER_CELLS = [5, 7, 9, 1, 3, 11, 13];
+const TOMBALA_CARD_COUNTS = [1, 2, 4, 8, 16];
 
 let cardSlider = document.querySelector("#cardSlider");
 let selectedCount = document.querySelector("#selectedCount");
@@ -10,15 +12,12 @@ let createCardsButton = document.querySelector("#createCardsButton");
 const drawButton = document.querySelector("#drawButton");
 const rowDrawButton = document.querySelector("#rowDrawButton");
 const roundActions = document.querySelector("#roundActions");
-const mainMenuButton = document.querySelector("#mainMenuButton");
 const cardsGrid = document.querySelector("#cardsGrid");
-const cardSortSelect = document.querySelector("#cardSortSelect");
 const sliderPanel = document.querySelector(".slider-panel");
 const topbar = document.querySelector(".topbar");
 const openHowPanel = document.querySelector("#openHowPanel");
-const openSettingsPanel = document.querySelector("#openSettingsPanel");
+const languageButton = document.querySelector("#languageButton");
 const howPanel = document.querySelector("#howPanel");
-const settingsPanel = document.querySelector("#settingsPanel");
 const homeShowcase = document.querySelector("#homeShowcase");
 const initialSliderPanelContent = sliderPanel.innerHTML;
 let hasDrawnNumbers = false;
@@ -27,13 +26,46 @@ let currentDrawNumberSet = new Set();
 let lastCardCount = 1;
 let visibleDrawRows = 0;
 let revealedBallCount = 0;
+let topbarModeTimer;
+let languageButtonTimer;
+
+function setTopbarGameMode(isGameMode) {
+  const currentGameMode = topbar.classList.contains("is-game-topbar");
+  const nextLabel = isGameMode ? "" : "Nasıl Oynanır ?";
+  const currentLabel = openHowPanel.querySelector(".menu-button-label");
+
+  window.clearTimeout(topbarModeTimer);
+  openHowPanel.setAttribute("aria-label", isGameMode ? "Ana menüye dön" : "Nasıl Oynanır");
+  openHowPanel.setAttribute("aria-expanded", "false");
+
+  if (currentGameMode === isGameMode && currentLabel?.textContent === nextLabel) {
+    return;
+  }
+
+  openHowPanel.classList.add("is-menu-switching-out");
+
+  topbarModeTimer = window.setTimeout(() => {
+    topbar.classList.toggle("is-game-topbar", isGameMode);
+    openHowPanel.innerHTML = `<span class="menu-button-label">${nextLabel}</span>`;
+    openHowPanel.classList.remove("is-menu-switching-out");
+    openHowPanel.classList.add("is-menu-switching-in");
+
+    window.setTimeout(() => {
+      openHowPanel.classList.remove("is-menu-switching-in");
+    }, 360);
+  }, 180);
+}
 
 function getSelectedCardCount() {
   return CARD_OPTIONS[Number(cardSlider.value)];
 }
 
 function updateSelectedCount() {
-  selectedCount.textContent = getSelectedCardCount();
+  if (selectedCount) {
+    selectedCount.textContent = getSelectedCardCount();
+  }
+
+  cardSlider.style.setProperty("--slider-percent", `${(Number(cardSlider.value) / (CARD_OPTIONS.length - 1)) * 100}%`);
 }
 
 function pickUniqueNumbers(amount, minNumber, maxNumber) {
@@ -50,17 +82,21 @@ function pickUniqueNumbers(amount, minNumber, maxNumber) {
   return numbers;
 }
 
-function createCard() {
+function createCard(useTombalaLayout = false) {
   const card = document.createElement("article");
-  card.className = "card generated-card";
+  card.className = useTombalaLayout ? "card generated-card tombala-card" : "card generated-card";
 
   const numberList = document.createElement("div");
-  numberList.className = "number-list";
+  numberList.className = useTombalaLayout ? "number-list tombala-number-list" : "number-list";
 
   const numbers = pickUniqueNumbers(NUMBERS_PER_CARD, MIN_NUMBER, MAX_NUMBER);
   card.dataset.originalNumbers = numbers.join(",");
 
-  renderCardNumbers(numberList, numbers);
+  if (useTombalaLayout) {
+    renderTombalaCardNumbers(numberList, numbers);
+  } else {
+    renderCardNumbers(numberList, numbers);
+  }
   card.append(numberList);
 
   return card;
@@ -92,16 +128,48 @@ function createRaffleBall(number, index, extraClass = "") {
   return ball;
 }
 
+function createCardNumberLabel(number, index) {
+  const numberPill = document.createElement("span");
+  const label = document.createElement("span");
+
+  numberPill.className = "number-pill";
+  numberPill.dataset.number = number;
+  numberPill.style.setProperty("--number-delay", `${index * 90}ms`);
+  label.textContent = number;
+  numberPill.append(label);
+
+  return numberPill;
+}
+
 function renderCardNumbers(numberList, numbers) {
   const fragment = document.createDocumentFragment();
 
   numberList.replaceChildren();
 
   numbers.forEach((number, numberIndex) => {
-    const numberPill = createRaffleBall(number, numberIndex, "number-pill");
-    numberPill.style.setProperty("--number-delay", `${numberIndex * 90}ms`);
-    fragment.append(numberPill);
+    fragment.append(createCardNumberLabel(number, numberIndex));
   });
+
+  numberList.append(fragment);
+}
+
+function renderTombalaCardNumbers(numberList, numbers) {
+  const fragment = document.createDocumentFragment();
+  let numberIndex = 0;
+
+  numberList.replaceChildren();
+
+  for (let cellIndex = 0; cellIndex < 15; cellIndex += 1) {
+    const cell = document.createElement("span");
+    cell.className = "tombala-cell";
+
+    if (TOMBALA_NUMBER_CELLS.includes(cellIndex)) {
+      cell.append(createCardNumberLabel(numbers[numberIndex], numberIndex));
+      numberIndex += 1;
+    }
+
+    fragment.append(cell);
+  }
 
   numberList.append(fragment);
 }
@@ -236,7 +304,7 @@ function markPreviewMatchedNumbers(numbers, revealedCount) {
 
       numberPills.forEach((numberPill) => {
         if (numberPill.classList.contains("is-preview-match")) {
-          numberPill.style.setProperty("--win-delay", `${winMatchIndex * 55}ms`);
+          numberPill.style.setProperty("--win-delay", `${500 + winMatchIndex * 55}ms`);
           numberPill.classList.add("is-matched-number");
           winMatchIndex += 1;
         }
@@ -256,16 +324,16 @@ function renderCardsInSliderPlace(cardCount) {
   resultGrid.className = `card-result-grid card-result-grid-${cardCount}`;
 
   for (let index = 0; index < cardCount; index += 1) {
-    resultGrid.append(createCard());
+    resultGrid.append(createCard(TOMBALA_CARD_COUNTS.includes(cardCount)));
   }
 
   sliderPanel.replaceChildren(resultGrid);
   sliderPanel.classList.remove("is-leaving");
   sliderPanel.classList.add("is-card-result");
   sliderPanel.dataset.cardCount = cardCount;
-  topbar.classList.add("is-hidden");
+  topbar.classList.remove("is-hidden");
+  setTopbarGameMode(true);
   closePanel("how");
-  closePanel("settings");
   cardsGrid.className = "cards-grid";
   cardsGrid.replaceChildren();
   revealedBallCount = 0;
@@ -305,6 +373,7 @@ function restoreCardSelection() {
   sliderPanel.removeAttribute("data-card-count");
   sliderPanel.innerHTML = initialSliderPanelContent;
   topbar.classList.remove("is-hidden");
+  setTopbarGameMode(false);
   homeShowcase.classList.remove("is-hidden");
   roundActions.classList.add("is-hidden");
   drawButton.disabled = true;
@@ -323,8 +392,8 @@ function restoreCardSelection() {
 }
 
 function openPanel(panelName) {
-  const panel = panelName === "how" ? howPanel : settingsPanel;
-  const button = panelName === "how" ? openHowPanel : openSettingsPanel;
+  const panel = howPanel;
+  const button = openHowPanel;
 
   panel.classList.add("is-open");
   panel.setAttribute("aria-hidden", "false");
@@ -332,8 +401,8 @@ function openPanel(panelName) {
 }
 
 function closePanel(panelName) {
-  const panel = panelName === "how" ? howPanel : settingsPanel;
-  const button = panelName === "how" ? openHowPanel : openSettingsPanel;
+  const panel = howPanel;
+  const button = openHowPanel;
 
   panel.classList.remove("is-open");
   panel.setAttribute("aria-hidden", "true");
@@ -341,15 +410,7 @@ function closePanel(panelName) {
 }
 
 function getSortedCardNumbers(numbers) {
-  if (cardSortSelect.value === "random") {
-    return numbers;
-  }
-
-  if (cardSortSelect.value === "asc") {
-    return [...numbers].sort((first, second) => first - second);
-  }
-
-  return [...numbers].sort((first, second) => second - first);
+  return numbers;
 }
 
 function sortCardNumbers() {
@@ -361,7 +422,11 @@ function sortCardNumbers() {
       .map((number) => Number(number));
     const numberList = card.querySelector(".number-list");
 
-    renderCardNumbers(numberList, getSortedCardNumbers(originalNumbers));
+    if (card.classList.contains("tombala-card")) {
+      renderTombalaCardNumbers(numberList, getSortedCardNumbers(originalNumbers));
+    } else {
+      renderCardNumbers(numberList, getSortedCardNumbers(originalNumbers));
+    }
   });
 
   if (hasDrawnNumbers) {
@@ -476,14 +541,31 @@ function resetGame() {
 bindCardSelectionControls();
 renderHomeShowcase();
 
-openHowPanel.addEventListener("click", () => openPanel("how"));
-openSettingsPanel.addEventListener("click", () => openPanel("settings"));
+openHowPanel.addEventListener("click", () => {
+  if (topbar.classList.contains("is-game-topbar")) {
+    restoreCardSelection();
+    return;
+  }
+
+  openPanel("how");
+});
+
+languageButton.addEventListener("click", () => {
+  const nextLanguage = languageButton.dataset.language === "tr" ? "en" : "tr";
+
+  window.clearTimeout(languageButtonTimer);
+  languageButton.classList.add("is-language-switching");
+  languageButton.dataset.language = nextLanguage;
+  languageButton.textContent = nextLanguage === "tr" ? "TR" : "ENG";
+
+  languageButtonTimer = window.setTimeout(() => {
+    languageButton.classList.remove("is-language-switching");
+  }, 260);
+});
 
 document.querySelectorAll("[data-close-panel]").forEach((button) => {
   button.addEventListener("click", () => closePanel(button.dataset.closePanel));
 });
-
-cardSortSelect.addEventListener("change", sortCardNumbers);
 
 drawButton.addEventListener("click", () => {
   if (hasDrawnNumbers) {
@@ -495,5 +577,3 @@ drawButton.addEventListener("click", () => {
 });
 
 rowDrawButton.addEventListener("click", renderNextDrawRow);
-
-mainMenuButton.addEventListener("click", restoreCardSelection);
