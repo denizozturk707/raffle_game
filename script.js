@@ -2,7 +2,9 @@ const CARD_OPTIONS = [1, 2, 4, 8, 16, 32, 64];
 const NUMBERS_PER_CARD = 7;
 const MIN_NUMBER = 10;
 const MAX_NUMBER = 99;
-const KARO_REVEAL_STEPS = [6, 9, 6, 7, 6, 9, 5, 1];
+const KARO_REVEAL_STEPS = [5, 6, 7, 8, 9, 1, 1, 1, 1];
+const SHOWCASE_ROW_COUNTS = KARO_REVEAL_STEPS;
+const DRAW_BALL_COUNT = SHOWCASE_ROW_COUNTS.reduce((total, rowCount) => total + rowCount, 0);
 const TOMBALA_NUMBER_CELLS = [5, 7, 9, 1, 3, 11, 13];
 const TOMBALA_CARD_COUNTS = [1, 2, 4, 8, 16];
 
@@ -177,36 +179,37 @@ function renderTombalaCardNumbers(numberList, numbers) {
 function renderShowcaseBalls(numbers, revealedCount = 0) {
   const glass = homeShowcase.querySelector(".showcase-glass");
   const fragment = document.createDocumentFragment();
+  let numberIndex = 0;
 
   glass.replaceChildren();
 
-  numbers.forEach((number, numberIndex) => {
-    const revealClass = numberIndex < revealedCount ? " is-revealed" : "";
-    const showcaseBall = createRaffleBall(number, numberIndex, `showcase-ball${revealClass}`);
-    showcaseBall.style.setProperty("--ball-delay", `${getKaroRevealOrder(numberIndex) * 34}ms`);
-    showcaseBall.style.setProperty("--number-delay", `${numberIndex * 18}ms`);
-    fragment.append(showcaseBall);
+  SHOWCASE_ROW_COUNTS.forEach((rowCount) => {
+    const row = document.createElement("div");
+    row.className = "showcase-row";
+
+    for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+      const number = numbers[numberIndex];
+      const revealClass = numberIndex < revealedCount ? " is-revealed" : "";
+      const showcaseBall = createRaffleBall(number, numberIndex, `showcase-ball${revealClass}`);
+
+      showcaseBall.style.setProperty("--ball-delay", `${getKaroRevealOrder(numberIndex) * 34}ms`);
+      showcaseBall.style.setProperty("--number-delay", `${numberIndex * 18}ms`);
+      row.append(showcaseBall);
+      numberIndex += 1;
+    }
+
+    fragment.append(row);
   });
 
   glass.append(fragment);
 }
 
 function renderHomeShowcase() {
-  renderShowcaseBalls(pickUniqueNumbers(49, MIN_NUMBER, MAX_NUMBER), 0);
+  renderShowcaseBalls(pickUniqueNumbers(DRAW_BALL_COUNT, MIN_NUMBER, MAX_NUMBER), 0);
 }
 
 function getKaroRevealOrder(index) {
-  const rowIndex = Math.floor(index / 7);
-  const columnIndex = index % 7;
-  const diagonalIndex = rowIndex + columnIndex;
-  const diagonalStart = diagonalIndex <= 6
-    ? (diagonalIndex * (diagonalIndex + 1)) / 2
-    : 49 - ((13 - diagonalIndex) * (14 - diagonalIndex)) / 2;
-  const diagonalPosition = diagonalIndex <= 6
-    ? rowIndex
-    : rowIndex - (diagonalIndex - 6);
-
-  return diagonalStart + diagonalPosition;
+  return index;
 }
 
 function updateShowcaseNumbers(numbers) {
@@ -323,14 +326,35 @@ function renderCardsInSliderPlace(cardCount) {
   const resultGrid = document.createElement("div");
   resultGrid.className = `card-result-grid card-result-grid-${cardCount}`;
 
-  for (let index = 0; index < cardCount; index += 1) {
+  if (cardCount === 1) {
     resultGrid.append(createCard(TOMBALA_CARD_COUNTS.includes(cardCount)));
+  } else {
+    const leftCards = document.createElement("div");
+    const rightCards = document.createElement("div");
+    const splitIndex = Math.ceil(cardCount / 2);
+
+    resultGrid.classList.add("split-card-grid");
+    leftCards.className = "card-result-side card-result-side-left";
+    rightCards.className = "card-result-side card-result-side-right";
+
+    for (let index = 0; index < cardCount; index += 1) {
+      const card = createCard(TOMBALA_CARD_COUNTS.includes(cardCount));
+
+      if (index < splitIndex) {
+        leftCards.append(card);
+      } else {
+        rightCards.append(card);
+      }
+    }
+
+    resultGrid.append(leftCards, rightCards);
   }
 
   sliderPanel.replaceChildren(resultGrid);
   sliderPanel.classList.remove("is-leaving");
   sliderPanel.classList.add("is-card-result");
   sliderPanel.dataset.cardCount = cardCount;
+  homeShowcase.classList.add("is-game-showcase");
   topbar.classList.remove("is-hidden");
   setTopbarGameMode(true);
   closePanel("how");
@@ -374,7 +398,7 @@ function restoreCardSelection() {
   sliderPanel.innerHTML = initialSliderPanelContent;
   topbar.classList.remove("is-hidden");
   setTopbarGameMode(false);
-  homeShowcase.classList.remove("is-hidden");
+  homeShowcase.classList.remove("is-hidden", "is-game-showcase");
   roundActions.classList.add("is-hidden");
   drawButton.disabled = true;
   rowDrawButton.disabled = true;
@@ -491,7 +515,7 @@ function prepareDrawNumbers() {
     return;
   }
 
-  currentDrawNumbers = pickUniqueNumbers(49, MIN_NUMBER, MAX_NUMBER);
+  currentDrawNumbers = pickUniqueNumbers(DRAW_BALL_COUNT, MIN_NUMBER, MAX_NUMBER);
   updateShowcaseNumbers(currentDrawNumbers);
 }
 
@@ -506,10 +530,10 @@ function completeDrawView() {
 
 function renderDrawNumbers() {
   prepareDrawNumbers();
-  visibleDrawRows = 7;
-  revealedBallCount = 49;
+  visibleDrawRows = KARO_REVEAL_STEPS.length;
+  revealedBallCount = DRAW_BALL_COUNT;
 
-  renderDrawShowcase(currentDrawNumbers, 49);
+  renderDrawShowcase(currentDrawNumbers, DRAW_BALL_COUNT);
   completeDrawView();
 }
 
@@ -517,7 +541,7 @@ function renderNextDrawRow() {
   prepareDrawNumbers();
   const stepAmount = KARO_REVEAL_STEPS[visibleDrawRows] ?? 0;
   visibleDrawRows = Math.min(visibleDrawRows + 1, KARO_REVEAL_STEPS.length);
-  revealedBallCount = Math.min(revealedBallCount + stepAmount, 49);
+  revealedBallCount = Math.min(revealedBallCount + stepAmount, DRAW_BALL_COUNT);
 
   renderDrawShowcase(currentDrawNumbers, revealedBallCount);
 

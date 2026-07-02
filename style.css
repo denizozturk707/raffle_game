@@ -46,7 +46,7 @@ body {
   overflow: hidden;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  background: #020817 url("bg1.png") center top / cover no-repeat fixed;
+  background: #020817 url("game-background.png") center top / cover no-repeat fixed;
 }
 
 button,
@@ -353,16 +353,27 @@ button {
 
 .round-actions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
   gap: 10px;
+}
+
+.round-actions:not(.is-hidden) {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 8;
+  width: min(680px, calc(100vw - 32px));
+  transform: translateX(-50%);
 }
 
 .draw-button {
   display: block;
   position: static;
   z-index: 5;
-  margin: 0 auto;
+  width: min(320px, 100%);
+  margin: 0;
   color: #fffdf8;
   background: var(--blue);
   box-shadow: 0 12px 26px rgba(51, 102, 168, 0.28);
@@ -424,14 +435,14 @@ button {
 
 .home-showcase {
   position: fixed;
-  top: 110px;
+  top: 28px;
   left: 50%;
   z-index: 2;
-  width: 330px;
+  width: min(440px, 42vw);
   padding: 0;
   border: 0;
   background: transparent;
-  transform: translateX(-50%) rotate(45deg);
+  transform: translateX(-50%);
   transition: opacity 320ms ease, transform 320ms ease, filter 320ms ease;
 }
 
@@ -440,31 +451,40 @@ button {
   opacity: 0;
   filter: blur(8px);
   pointer-events: none;
-  transform: translateX(-50%) translateY(-18px) rotate(45deg) scale(0.97);
+  transform: translateX(-50%) translateY(-18px) scale(0.97);
+}
+
+.home-showcase.is-game-showcase {
+  top: 28px;
+  z-index: 3;
+  transform: translateX(-50%) scale(0.86);
 }
 
 .showcase-glass {
-  display: grid;
+  display: flex;
   position: relative;
-  grid-template-columns: repeat(7, 34px);
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 2px;
   overflow: visible;
-  padding: 28px;
-  border: 1px solid rgba(233, 185, 73, 0.42);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(233, 185, 73, 0.08), rgba(255, 255, 255, 0.03)),
-    rgba(2, 8, 23, 0.18);
-  box-shadow:
-    inset 0 0 26px rgba(233, 185, 73, 0.12),
-    0 20px 48px rgba(0, 0, 0, 0.22);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.showcase-row {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
 }
 
 .showcase-ball {
   display: grid;
   position: relative;
-  width: 34px;
+  width: 28px;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 50%;
@@ -481,7 +501,7 @@ button {
   font-weight: 900;
   animation: showcaseDrop 980ms ease-out both;
   animation-delay: var(--ball-delay, 0ms);
-  transform: rotate(-45deg);
+  transform: none;
 }
 
 .showcase-ball::before {
@@ -557,7 +577,7 @@ h2 {
 .slider-panel.is-card-result {
   position: fixed;
   left: 50%;
-  bottom: 20px;
+  bottom: 92px;
   z-index: 4;
   opacity: 1;
   filter: none;
@@ -576,15 +596,15 @@ h2 {
 }
 
 .slider-panel.is-card-result[data-card-count="2"] {
-  width: min(820px, 100%);
+  width: calc(100vw - 48px);
 }
 
 .slider-panel.is-card-result[data-card-count="4"] {
-  width: min(820px, 100%);
+  width: calc(100vw - 48px);
 }
 
 .slider-panel.is-card-result[data-card-count="8"] {
-  width: min(1080px, 100%);
+  width: calc(100vw - 48px);
 }
 
 .slider-panel.is-card-result[data-card-count="16"] {
@@ -663,6 +683,49 @@ h2 {
 
 .card-result-grid-64 {
   grid-template-columns: repeat(16, minmax(62px, 1fr));
+}
+
+.card-result-grid.split-card-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(300px, 28vw, 560px);
+  width: 100%;
+}
+
+.card-result-side {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.card-result-side-left {
+  justify-self: end;
+}
+
+.card-result-side-right {
+  justify-self: start;
+}
+
+.card-result-grid-2 .card-result-side,
+.card-result-grid-4 .card-result-side {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(360px, 100%);
+}
+
+.card-result-grid-8 .card-result-side {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(680px, 100%);
+}
+
+.card-result-grid-16 .card-result-side,
+.card-result-grid-32 .card-result-side {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(760px, 100%);
+}
+
+.card-result-grid-64 .card-result-side {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: min(860px, 100%);
 }
 
 .back-button {
@@ -1298,7 +1361,7 @@ h2 {
 }
 
 .showcase-ball {
-  --ball-counter-rotate: -45deg;
+  --ball-counter-rotate: 0deg;
 }
 
 .showcase-ball > span {
@@ -1477,24 +1540,61 @@ h2 {
     font-size: 0.9rem;
   }
 
+  .round-actions:not(.is-hidden) {
+    bottom: 14px;
+    width: calc(100vw - 20px);
+  }
+
+  .slider-panel.is-card-result {
+    bottom: 112px;
+  }
+
+  .slider-panel.is-card-result[data-card-count="2"],
+  .slider-panel.is-card-result[data-card-count="4"],
+  .slider-panel.is-card-result[data-card-count="8"],
+  .slider-panel.is-card-result[data-card-count="16"],
+  .slider-panel.is-card-result[data-card-count="32"],
+  .slider-panel.is-card-result[data-card-count="64"] {
+    width: calc(100vw - 20px);
+  }
+
+  .card-result-grid.split-card-grid {
+    gap: 10px;
+  }
+
+  .card-result-grid-8 .card-result-side,
+  .card-result-grid-16 .card-result-side,
+  .card-result-grid-32 .card-result-side,
+  .card-result-grid-64 .card-result-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .game-setup {
     padding: 12px 0 0;
   }
 
   .home-showcase {
-    top: 120px;
-    width: 260px;
+    top: 34px;
+    width: min(330px, calc(100vw - 32px));
     padding: 0;
   }
 
+  .home-showcase.is-game-showcase {
+    top: 34px;
+    transform: translateX(-50%) scale(0.82);
+  }
+
   .showcase-glass {
-    grid-template-columns: repeat(7, 26px);
-    gap: 4px;
-    padding: 22px;
+    gap: 2px;
+    padding: 0;
+  }
+
+  .showcase-row {
+    gap: 3px;
   }
 
   .showcase-ball {
-    width: 26px;
+    width: 24px;
     font-size: 0.62rem;
   }
 
