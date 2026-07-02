@@ -12,7 +12,6 @@ const rowDrawButton = document.querySelector("#rowDrawButton");
 const roundActions = document.querySelector("#roundActions");
 const mainMenuButton = document.querySelector("#mainMenuButton");
 const cardsGrid = document.querySelector("#cardsGrid");
-const sortSelect = document.querySelector("#sortSelect");
 const cardSortSelect = document.querySelector("#cardSortSelect");
 const sliderPanel = document.querySelector(".slider-panel");
 const topbar = document.querySelector(".topbar");
@@ -150,7 +149,6 @@ function updateShowcaseNumbers(numbers) {
     const number = numbers[index];
 
     ball.dataset.number = number;
-    ball.classList.remove("is-revealed");
     ball.style.setProperty("--number-delay", `${getKaroRevealOrder(index) * 34}ms`);
     label.textContent = number;
   });
@@ -176,26 +174,54 @@ function getRevealedDrawNumbers(numbers, revealedCount) {
   return numbers.filter((number, index) => getKaroRevealOrder(index) < revealedCount);
 }
 
+function getRevealedDrawOrderMap(numbers, revealedCount) {
+  const revealedOrderMap = new Map();
+
+  numbers.forEach((number, index) => {
+    const revealOrder = getKaroRevealOrder(index);
+
+    if (revealOrder < revealedCount) {
+      revealedOrderMap.set(number, revealOrder);
+    }
+  });
+
+  return revealedOrderMap;
+}
+
 function markPreviewMatchedNumbers(numbers, revealedCount) {
-  const revealedNumberSet = new Set(getRevealedDrawNumbers(numbers, revealedCount));
+  const revealedOrderMap = getRevealedDrawOrderMap(numbers, revealedCount);
   const cards = sliderPanel.querySelectorAll(".card");
 
   cards.forEach((card) => {
     const numberPills = [...card.querySelectorAll(".number-pill")];
     let previewMatchCount = 0;
+    const previewMatchOrders = [];
 
     numberPills.forEach((numberPill) => {
       const number = Number(numberPill.dataset.number);
-      const isPreviewMatch = revealedNumberSet.has(number);
+      const isPreviewMatch = revealedOrderMap.has(number);
 
       numberPill.classList.toggle("is-preview-match", isPreviewMatch);
+      numberPill.classList.remove("is-matched-number");
 
       if (isPreviewMatch) {
+        const revealOrder = revealedOrderMap.get(number);
+        numberPill.style.setProperty("--match-delay", `${revealOrder * 34 + 160}ms`);
+        previewMatchOrders.push(revealOrder);
         previewMatchCount += 1;
       }
     });
 
     card.classList.remove("is-preview-five-match-card", "is-preview-six-match-card", "is-preview-jackpot-card");
+    previewMatchOrders.sort((first, second) => first - second);
+
+    if (previewMatchCount >= 5) {
+      const prizeIndex = Math.min(previewMatchCount, 7) - 1;
+      const prizeDelay = previewMatchOrders[prizeIndex] * 34 + 520;
+      card.style.setProperty("--prize-delay", `${prizeDelay}ms`);
+    } else {
+      card.style.setProperty("--prize-delay", "0ms");
+    }
 
     if (previewMatchCount >= 7) {
       card.classList.add("is-preview-jackpot-card");
@@ -203,6 +229,18 @@ function markPreviewMatchedNumbers(numbers, revealedCount) {
       card.classList.add("is-preview-six-match-card");
     } else if (previewMatchCount === 5) {
       card.classList.add("is-preview-five-match-card");
+    }
+
+    if (previewMatchCount >= 5) {
+      let winMatchIndex = 0;
+
+      numberPills.forEach((numberPill) => {
+        if (numberPill.classList.contains("is-preview-match")) {
+          numberPill.style.setProperty("--win-delay", `${winMatchIndex * 55}ms`);
+          numberPill.classList.add("is-matched-number");
+          winMatchIndex += 1;
+        }
+      });
     }
   });
 }
@@ -349,7 +387,7 @@ function markFullyMatchedCards(drawNumbers) {
       "is-six-match-card",
       "is-jackpot-card"
     );
-    numberPills.forEach((numberPill) => numberPill.classList.remove("is-preview-match", "is-matched-number"));
+    numberPills.forEach((numberPill) => numberPill.classList.remove("is-matched-number"));
 
     if (matchCount === 7) {
       card.classList.add("is-jackpot-card");
@@ -371,24 +409,16 @@ function markFullyMatchedCards(drawNumbers) {
   });
 }
 
-function getSortedDrawNumbers() {
-  if (sortSelect.value === "asc") {
-    return [...currentDrawNumbers].sort((first, second) => first - second);
-  }
-
-  if (sortSelect.value === "desc") {
-    return [...currentDrawNumbers].sort((first, second) => second - first);
-  }
-
-  return currentDrawNumbers;
-}
-
 function renderDrawShowcase(numbers, revealedCount) {
   cardsGrid.className = "cards-grid";
   cardsGrid.replaceChildren();
   updateShowcaseNumbers(numbers);
   revealShowcaseNumbers(revealedCount);
   markPreviewMatchedNumbers(numbers, revealedCount);
+
+  if (hasDrawnNumbers) {
+    markFullyMatchedCards(currentDrawNumbers);
+  }
 }
 
 function prepareDrawNumbers() {
@@ -397,7 +427,7 @@ function prepareDrawNumbers() {
   }
 
   currentDrawNumbers = pickUniqueNumbers(49, MIN_NUMBER, MAX_NUMBER);
-  updateShowcaseNumbers(getSortedDrawNumbers());
+  updateShowcaseNumbers(currentDrawNumbers);
 }
 
 function completeDrawView() {
@@ -414,7 +444,7 @@ function renderDrawNumbers() {
   visibleDrawRows = 7;
   revealedBallCount = 49;
 
-  renderDrawShowcase(getSortedDrawNumbers(), 49);
+  renderDrawShowcase(currentDrawNumbers, 49);
   completeDrawView();
 }
 
@@ -424,7 +454,7 @@ function renderNextDrawRow() {
   visibleDrawRows = Math.min(visibleDrawRows + 1, KARO_REVEAL_STEPS.length);
   revealedBallCount = Math.min(revealedBallCount + stepAmount, 49);
 
-  renderDrawShowcase(getSortedDrawNumbers(), revealedBallCount);
+  renderDrawShowcase(currentDrawNumbers, revealedBallCount);
 
   if (visibleDrawRows === KARO_REVEAL_STEPS.length) {
     completeDrawView();
@@ -451,17 +481,6 @@ openSettingsPanel.addEventListener("click", () => openPanel("settings"));
 
 document.querySelectorAll("[data-close-panel]").forEach((button) => {
   button.addEventListener("click", () => closePanel(button.dataset.closePanel));
-});
-
-sortSelect.addEventListener("change", () => {
-  if (currentDrawNumbers.length === 0) {
-    return;
-  }
-
-  const sortedNumbers = getSortedDrawNumbers();
-  const revealedCount = hasDrawnNumbers ? 49 : revealedBallCount;
-
-  renderDrawShowcase(sortedNumbers, revealedCount);
 });
 
 cardSortSelect.addEventListener("change", sortCardNumbers);

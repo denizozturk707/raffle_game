@@ -62,8 +62,6 @@ button {
   top: 0;
   bottom: 0;
   z-index: 20;
-  width: 30vw;
-  min-width: 320px;
   padding: 24px;
   background: rgba(255, 253, 248, 0.97);
   box-shadow: 0 0 60px rgba(23, 32, 27, 0.18);
@@ -72,12 +70,16 @@ button {
 
 .how-panel {
   left: 0;
+  width: 18vw;
+  min-width: 240px;
   border-right: 1px solid var(--line);
   transform: translateX(-105%);
 }
 
 .settings-panel {
   right: 0;
+  width: 10vw;
+  min-width: 190px;
   border-left: 1px solid var(--line);
   transform: translateX(105%);
 }
@@ -87,15 +89,27 @@ button {
 }
 
 .panel-close {
-  min-height: 36px;
-  border-radius: 8px;
-  padding: 0 12px;
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: grid;
+  width: 34px;
+  min-height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  padding: 0;
   color: var(--ink);
   background: var(--field);
   border: 1px solid var(--line);
   font-family: "Trebuchet MS", Verdana, sans-serif;
-  font-size: 0.8rem;
+  font-size: 1.3rem;
+  line-height: 1;
   font-weight: 800;
+}
+
+.how-panel .panel-close {
+  left: 24px;
+  right: auto;
 }
 
 .settings-group {
@@ -540,6 +554,8 @@ h2 {
 }
 
 .card {
+  position: relative;
+  overflow: hidden;
   min-height: 150px;
   padding: 16px;
   border: 1px solid var(--line);
@@ -548,55 +564,91 @@ h2 {
   box-shadow: 0 14px 30px rgba(23, 32, 27, 0.08);
   animation: cardEnter 360ms ease both;
   transition:
-    background 520ms ease,
-    border-color 520ms ease,
-    box-shadow 520ms ease,
-    transform 520ms ease;
+    border-color 920ms cubic-bezier(0.2, 0.78, 0.2, 1),
+    box-shadow 920ms cubic-bezier(0.2, 0.78, 0.2, 1),
+    transform 720ms cubic-bezier(0.2, 0.78, 0.2, 1);
+  transition-delay: var(--prize-delay, 0ms);
+}
+
+.card::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 1300ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--prize-delay, 0ms);
+  content: "";
+  pointer-events: none;
+}
+
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card.is-preview-jackpot-card::before,
+.card.is-jackpot-card::before {
+  opacity: 1;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.42), transparent 42%),
+    linear-gradient(180deg, #ffe27a 0%, #d8a51f 100%);
 }
 
 .card.is-preview-jackpot-card,
 .card.is-jackpot-card {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.42), transparent 42%),
-    linear-gradient(180deg, #ffe27a 0%, #d8a51f 100%);
   border-color: rgba(175, 128, 16, 0.78);
   box-shadow:
     0 0 0 2px rgba(255, 226, 122, 0.42),
     0 20px 45px rgba(216, 165, 31, 0.34);
 }
 
-.card.is-preview-six-match-card,
-.card.is-six-match-card {
+.card.is-preview-six-match-card::before,
+.card.is-six-match-card::before {
+  opacity: 1;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0 18%, transparent 36%),
     linear-gradient(180deg, #e9eef2 0%, #9faab5 42%, #596672 100%);
+}
+
+.card.is-preview-six-match-card,
+.card.is-six-match-card {
   border-color: rgba(70, 80, 91, 0.95);
   box-shadow:
     0 0 0 2px rgba(89, 102, 114, 0.5),
     0 18px 42px rgba(70, 80, 91, 0.42);
 }
 
-.card.is-preview-five-match-card,
-.card.is-five-match-card {
+.card.is-preview-five-match-card::before,
+.card.is-five-match-card::before {
+  opacity: 1;
   background:
     linear-gradient(135deg, rgba(255, 242, 225, 0.48), transparent 42%),
     linear-gradient(180deg, #d99b63 0%, #9a5b2e 100%);
+}
+
+.card.is-preview-five-match-card,
+.card.is-five-match-card {
   border-color: rgba(125, 73, 35, 0.74);
   box-shadow:
     0 0 0 2px rgba(217, 155, 99, 0.34),
     0 16px 32px rgba(154, 91, 46, 0.28);
 }
 
+.card.is-preview-five-match-card .number-pill.is-matched-number,
+.card.is-preview-six-match-card .number-pill.is-matched-number,
+.card.is-preview-jackpot-card .number-pill.is-matched-number,
 .card.is-five-match-card .number-pill.is-matched-number,
 .card.is-six-match-card .number-pill.is-matched-number,
 .card.is-jackpot-card .number-pill.is-matched-number {
-  color: #35f08b;
+  animation: matchedToGreen 760ms ease-out both;
+  animation-delay: var(--win-delay, 0ms);
 }
 
 .number-pill.is-preview-match {
-  color: #ffd95a;
   transition: color 380ms ease, filter 380ms ease;
-  animation: previewMatchGlow 720ms ease-out both;
+  animation: previewMatchGlow 760ms ease-out both;
+  animation-delay: var(--match-delay, 0ms);
 }
 
 .number-pill.is-preview-match > span {
@@ -921,15 +973,35 @@ h2 {
 
 @keyframes previewMatchGlow {
   0% {
+    color: #fffdf8;
     filter: brightness(1);
   }
 
   42% {
+    color: #ffe88f;
     filter: brightness(1.38);
   }
 
   100% {
+    color: #ffd95a;
     filter: brightness(1.08);
+  }
+}
+
+@keyframes matchedToGreen {
+  0% {
+    color: #ffd95a;
+    filter: brightness(1.08);
+  }
+
+  48% {
+    color: #eaffb7;
+    filter: brightness(1.45);
+  }
+
+  100% {
+    color: #35f08b;
+    filter: brightness(1.12);
   }
 }
 
@@ -949,8 +1021,15 @@ h2 {
   }
 
   .side-panel {
-    width: 86vw;
     min-width: 0;
+  }
+
+  .how-panel {
+    width: 62vw;
+  }
+
+  .settings-panel {
+    width: 54vw;
   }
 
   .app-shell {
