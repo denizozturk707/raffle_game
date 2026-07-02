@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Çekiliş Oyunu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="side-panel how-panel" id="howPanel" aria-hidden="true">
+    <button class="panel-close" type="button" data-close-panel="how" aria-label="How to Play panelini kapat">
+      Kapat
+    </button>
+  </aside>
+
+  <aside class="side-panel settings-panel" id="settingsPanel" aria-hidden="true">
+    <button class="panel-close" type="button" data-close-panel="settings" aria-label="Settings panelini kapat">
+      Kapat
+    </button>
+    <div class="settings-group">
+      <label class="sort-label" for="cardSortSelect">Kart sayılarını sırala</label>
+      <select class="sort-select" id="cardSortSelect" aria-label="Kart sayılarını sırala">
+        <option value="random">Karışık</option>
+        <option value="asc">↗ Düşükten yükseğe</option>
+        <option value="desc">↘ Yüksekten düşüğe</option>
+      </select>
+    </div>
+    <div class="settings-group draw-tools" id="drawTools">
+      <label class="sort-label" for="sortSelect">Çekilen sayıları sırala</label>
+      <select class="sort-select" id="sortSelect" aria-label="Çekilen sayıları sırala">
+        <option value="random">Karışık</option>
+        <option value="asc">↗ Düşükten yükseğe</option>
+        <option value="desc">↘ Yüksekten düşüğe</option>
+      </select>
+    </div>
+  </aside>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <button class="main-menu-button how-button" id="openHowPanel" type="button" aria-controls="howPanel" aria-expanded="false">
+        How to Play
+      </button>
+      <button class="main-menu-button settings-button" id="openSettingsPanel" type="button" aria-controls="settingsPanel" aria-expanded="false">
+        Settings
+      </button>
+    </header>
+
+    <section class="game-setup" aria-label="Kart ayarı">
+      <div class="home-showcase" id="homeShowcase" aria-hidden="true">
+        <div class="showcase-glass"></div>
+      </div>
+      <div class="slider-panel">
+        <div class="selected-count">
+          <span id="selectedCount">1</span>
+          <span>kart</span>
+        </div>
+
+        <label class="slider-label" for="cardSlider">Kart adedi</label>
+        <input
+          id="cardSlider"
+          class="card-slider"
+          type="range"
+          min="0"
+          max="6"
+          value="0"
+          step="1"
+          aria-describedby="sliderStops"
+        >
+
+        <div class="slider-stops" id="sliderStops" aria-hidden="true">
+          <span>1</span>
+          <span>2</span>
+          <span>4</span>
+          <span>8</span>
+          <span>16</span>
+          <span>32</span>
+          <span>64</span>
+        </div>
+
+        <button class="create-button" id="createCardsButton" type="button">
+          Kartları Oluştur
+        </button>
+      </div>
+    </section>
+
+    <section class="cards-section" aria-label="Oluşturulan kartlar">
+      <div class="cards-grid" id="cardsGrid" aria-live="polite"></div>
+      <div class="round-actions is-hidden" id="roundActions">
+        <button class="menu-button" id="mainMenuButton" type="button">
+          Ana Menü
+        </button>
+        <button class="draw-button secondary-draw-button" id="rowDrawButton" type="button" disabled>
+          1 Satır Görüntüle
+        </button>
+        <button class="draw-button" id="drawButton" type="button" disabled>
+          Tüm Topları Görüntüle
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
