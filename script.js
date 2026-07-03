@@ -782,6 +782,7 @@ function createSixtyFourCardLayout() {
 
 function renderCardsInSliderPlace(cardCount) {
   lastCardCount = cardCount;
+  document.body.classList.add("is-game-active");
 
   const resultGrid = cardCount === 64 ? createSixtyFourCardLayout() : createCardResultGrid(cardCount);
 
@@ -850,6 +851,7 @@ function bindCardSelectionControls(cardCountToRestore) {
 }
 
 function restoreCardSelection() {
+  document.body.classList.remove("is-game-active");
   sliderPanel.classList.remove("is-card-result", "is-leaving");
   sliderPanel.removeAttribute("data-card-count");
   sliderPanel.innerHTML = initialSliderPanelContent;
