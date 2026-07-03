@@ -12,7 +12,10 @@ const TOMBALA_LAYOUTS = {
   compact: { totalCells: 12, cellClass: "tombala-number-list-12" },
   micro: { totalCells: 8, cellClass: "tombala-number-list-8" }
 };
-const REVEAL_STEP_MS = 34;
+const HOME_REVEAL_STEP_MS = 34;
+const HOME_NUMBER_STEP_MS = 18;
+const DRAW_REVEAL_STEP_MS = 85;
+const DRAW_ROW_STAGGER_STEPS = 2;
 const MATCH_DELAY_BASE_MS = 1160;
 const MATCH_ANIMATION_MS = 760;
 const PRIZE_DELAY_BASE_MS = 520;
@@ -20,6 +23,7 @@ const PRIZE_ANIMATION_MS = 1300;
 const FINAL_UNLOCK_BUFFER_MS = 0;
 const FINAL_UNLOCK_EARLY_MS = 520;
 const BUTTON_TEXT_FADE_MS = 260;
+const LANGUAGE_SWITCH_LOCK_MS = BUTTON_TEXT_FADE_MS * 2;
 const SHOWCASE_TEXT_HIDE_MS = 520;
 
 let cardSlider = document.querySelector("#cardSlider");
@@ -47,6 +51,7 @@ let isActionLocked = false;
 let actionLockTimer;
 let topbarModeTimer;
 let languageButtonTimer;
+let isLanguageSwitching = false;
 let homeShowcaseNumbers = [];
 let currentLanguage = "tr";
 
@@ -225,12 +230,13 @@ function setTranslatedButtonText(button, text, smooth = true) {
   setButtonText(button, text);
 }
 
-function updateLanguageButton(smooth = true) {
-  const targetLanguage = currentLanguage === "tr" ? "en" : "tr";
+function updateLanguageButton() {
+  const currentLanguageLabel = currentLanguage === "en" ? "EN" : "TR";
 
-  languageButton.dataset.language = targetLanguage;
+  languageButton.dataset.language = currentLanguage;
   languageButton.setAttribute("aria-label", t("languageAria"));
-  setTextSmooth(languageButton, targetLanguage === "en" ? "ENG" : "TR", smooth);
+  languageButton.classList.remove("is-i18n-fading-out", "is-i18n-fading-in");
+  languageButton.textContent = currentLanguageLabel;
 }
 
 function getRoundButtonLabels() {
@@ -278,13 +284,13 @@ function applyTranslations(smooth = true) {
   setTranslatedButtonText(createCardsButton, t("createCards"), smooth);
   setTranslatedButtonText(rowDrawButton, roundLabels.row, smooth);
   setTranslatedButtonText(drawButton, roundLabels.draw, smooth);
-  updateLanguageButton(smooth);
+  updateLanguageButton();
 }
 
 function getAnimationLockDuration(revealedCount) {
-  const lastRevealOrder = Math.max(0, revealedCount - 1);
-  const matchEndMs = lastRevealOrder * REVEAL_STEP_MS + MATCH_DELAY_BASE_MS + MATCH_ANIMATION_MS;
-  const prizeEndMs = lastRevealOrder * REVEAL_STEP_MS + PRIZE_DELAY_BASE_MS + PRIZE_ANIMATION_MS;
+  const lastRevealOrder = getLastDrawAnimationOrder(revealedCount);
+  const matchEndMs = lastRevealOrder * DRAW_REVEAL_STEP_MS + MATCH_DELAY_BASE_MS + MATCH_ANIMATION_MS;
+  const prizeEndMs = lastRevealOrder * DRAW_REVEAL_STEP_MS + PRIZE_DELAY_BASE_MS + PRIZE_ANIMATION_MS;
 
   return Math.max(0, Math.max(matchEndMs, prizeEndMs) + FINAL_UNLOCK_BUFFER_MS - FINAL_UNLOCK_EARLY_MS);
 }
@@ -520,8 +526,8 @@ function renderShowcaseBalls(numbers, revealedCount = 0) {
       const revealClass = numberIndex < revealedCount ? " is-revealed" : "";
       const showcaseBall = createRaffleBall(number, numberIndex, `showcase-ball${revealClass}`);
 
-      showcaseBall.style.setProperty("--ball-delay", `${getKaroRevealOrder(numberIndex) * 34}ms`);
-      showcaseBall.style.setProperty("--number-delay", `${numberIndex * 18}ms`);
+      showcaseBall.style.setProperty("--ball-delay", `${getKaroRevealOrder(numberIndex) * HOME_REVEAL_STEP_MS}ms`);
+      showcaseBall.style.setProperty("--number-delay", `${numberIndex * HOME_NUMBER_STEP_MS}ms`);
       row.append(showcaseBall);
       numberIndex += 1;
     }
@@ -566,7 +572,34 @@ function getKaroRevealOrder(index) {
   return index;
 }
 
-function updateShowcaseNumbers(numbers) {
+function getDrawAnimationOrder(index) {
+  let rowStartIndex = 0;
+
+  for (let rowIndex = 0; rowIndex < SHOWCASE_ROW_COUNTS.length; rowIndex += 1) {
+    const rowCount = SHOWCASE_ROW_COUNTS[rowIndex];
+    const rowEndIndex = rowStartIndex + rowCount;
+
+    if (index < rowEndIndex) {
+      return index - rowStartIndex + rowIndex * DRAW_ROW_STAGGER_STEPS;
+    }
+
+    rowStartIndex = rowEndIndex;
+  }
+
+  return index;
+}
+
+function getLastDrawAnimationOrder(revealedCount) {
+  let lastRevealOrder = 0;
+
+  for (let index = 0; index < revealedCount; index += 1) {
+    lastRevealOrder = Math.max(lastRevealOrder, getDrawAnimationOrder(index));
+  }
+
+  return lastRevealOrder;
+}
+
+function updateShowcaseNumbers(numbers, revealStepMs = HOME_REVEAL_STEP_MS, getDelayOrder = getKaroRevealOrder) {
   const showcaseBalls = homeShowcase.querySelectorAll(".showcase-ball");
 
   showcaseBalls.forEach((ball, index) => {
@@ -574,7 +607,7 @@ function updateShowcaseNumbers(numbers) {
     const number = numbers[index];
 
     ball.dataset.number = number;
-    ball.style.setProperty("--number-delay", `${getKaroRevealOrder(index) * 34}ms`);
+    ball.style.setProperty("--number-delay", `${getDelayOrder(index) * revealStepMs}ms`);
     label.textContent = number;
   });
 }
@@ -626,9 +659,9 @@ function getRevealedDrawOrderMap(numbers, revealedCount) {
   const revealedOrderMap = new Map();
 
   numbers.forEach((number, index) => {
-    const revealOrder = getKaroRevealOrder(index);
+    const revealOrder = getDrawAnimationOrder(index);
 
-    if (revealOrder < revealedCount) {
+    if (getKaroRevealOrder(index) < revealedCount) {
       revealedOrderMap.set(number, revealOrder);
     }
   });
@@ -654,7 +687,7 @@ function markPreviewMatchedNumbers(numbers, revealedCount) {
 
       if (isPreviewMatch) {
         const revealOrder = revealedOrderMap.get(number);
-        numberPill.style.setProperty("--match-delay", `${revealOrder * REVEAL_STEP_MS + MATCH_DELAY_BASE_MS}ms`);
+        numberPill.style.setProperty("--match-delay", `${revealOrder * DRAW_REVEAL_STEP_MS + MATCH_DELAY_BASE_MS}ms`);
         previewMatchOrders.push(revealOrder);
         previewMatchCount += 1;
       }
@@ -665,7 +698,7 @@ function markPreviewMatchedNumbers(numbers, revealedCount) {
 
     if (previewMatchCount >= 5) {
       const prizeIndex = Math.min(previewMatchCount, 7) - 1;
-      const prizeDelay = previewMatchOrders[prizeIndex] * REVEAL_STEP_MS + PRIZE_DELAY_BASE_MS;
+      const prizeDelay = previewMatchOrders[prizeIndex] * DRAW_REVEAL_STEP_MS + PRIZE_DELAY_BASE_MS;
       card.style.setProperty("--prize-delay", `${prizeDelay}ms`);
     } else {
       card.style.setProperty("--prize-delay", "0ms");
@@ -938,7 +971,7 @@ function markFullyMatchedCards(drawNumbers) {
 function renderDrawShowcase(numbers, revealedCount) {
   cardsGrid.className = "cards-grid";
   cardsGrid.replaceChildren();
-  updateShowcaseNumbers(numbers);
+  updateShowcaseNumbers(numbers, DRAW_REVEAL_STEP_MS, getDrawAnimationOrder);
   revealShowcaseNumbers(revealedCount);
   markPreviewMatchedNumbers(numbers, revealedCount);
 
@@ -953,7 +986,7 @@ function prepareDrawNumbers() {
   }
 
   currentDrawNumbers = pickUniqueNumbers(DRAW_BALL_COUNT, MIN_NUMBER, MAX_NUMBER);
-  updateShowcaseNumbers(currentDrawNumbers);
+  updateShowcaseNumbers(currentDrawNumbers, DRAW_REVEAL_STEP_MS, getDrawAnimationOrder);
 }
 
 function completeDrawView(lockDuration = getAnimationLockDuration(DRAW_BALL_COUNT)) {
@@ -1038,6 +1071,11 @@ openHowPanel.addEventListener("click", () => {
 });
 
 languageButton.addEventListener("click", () => {
+  if (isLanguageSwitching) {
+    return;
+  }
+
+  isLanguageSwitching = true;
   currentLanguage = currentLanguage === "tr" ? "en" : "tr";
 
   window.clearTimeout(languageButtonTimer);
@@ -1045,8 +1083,9 @@ languageButton.addEventListener("click", () => {
   applyTranslations(true);
 
   languageButtonTimer = window.setTimeout(() => {
+    isLanguageSwitching = false;
     languageButton.classList.remove("is-language-switching");
-  }, 260);
+  }, LANGUAGE_SWITCH_LOCK_MS);
 });
 
 document.querySelectorAll("[data-close-panel]").forEach((button) => {
