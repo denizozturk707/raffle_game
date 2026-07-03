@@ -2301,6 +2301,64 @@ h2 {
     font-size: 0.5rem;
   }
 
+  body.is-game-active .card-result-grid-32 .card,
+  body.is-game-active .card-result-grid-64 .card,
+  body.is-game-active .card-result-layout-64 .card {
+    contain: layout paint;
+    animation: none;
+    transition: border-color 180ms ease, background-color 180ms ease;
+  }
+
+  body.is-game-active .card-result-grid-32 .tombala-card,
+  body.is-game-active .card-result-grid-64 .tombala-card,
+  body.is-game-active .card-result-layout-64 .tombala-card {
+    background: rgba(3, 12, 27, 0.72);
+    box-shadow: none;
+  }
+
+  body.is-game-active .card-result-grid-32 .card::before,
+  body.is-game-active .card-result-grid-64 .card::before,
+  body.is-game-active .card-result-layout-64 .card::before {
+    transition: none;
+  }
+
+  body.is-game-active .card-result-grid-32 .tombala-cell,
+  body.is-game-active .card-result-grid-64 .tombala-cell,
+  body.is-game-active .card-result-layout-64 .tombala-cell {
+    background: rgba(255, 253, 248, 0.055);
+    border-color: rgba(233, 185, 73, 0.18);
+    box-shadow: none;
+  }
+
+  body.is-game-active .card-result-grid-32 .tombala-cell:empty,
+  body.is-game-active .card-result-grid-64 .tombala-cell:empty,
+  body.is-game-active .card-result-layout-64 .tombala-cell:empty {
+    background: rgba(2, 8, 23, 0.18);
+  }
+
+  body.is-game-active .card-result-grid-32 .number-pill,
+  body.is-game-active .card-result-grid-64 .number-pill,
+  body.is-game-active .card-result-layout-64 .number-pill {
+    animation: none;
+    text-shadow: none;
+  }
+
+  body.is-game-active .card-result-grid-32 .number-pill.is-preview-match,
+  body.is-game-active .card-result-grid-64 .number-pill.is-preview-match,
+  body.is-game-active .card-result-layout-64 .number-pill.is-preview-match {
+    color: #ffd95a;
+    filter: none;
+    animation: none;
+    transition: none;
+  }
+
+  body.is-game-active .card-result-grid-32 .number-pill.is-matched-number,
+  body.is-game-active .card-result-grid-64 .number-pill.is-matched-number,
+  body.is-game-active .card-result-layout-64 .number-pill.is-matched-number {
+    color: #35f08b;
+    animation: none !important;
+  }
+
   .cards-section {
     display: contents;
   }
