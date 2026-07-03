@@ -2032,14 +2032,7 @@ h2 {
     --mobile-topbar-height: 56px;
     --mobile-balls-height: 214px;
     --mobile-action-height: 48px;
-    --mobile-action-gap: 10px;
-    --mobile-game-content-top: calc(
-      var(--mobile-topbar-height) +
-      var(--mobile-balls-height) +
-      var(--mobile-action-height) +
-      var(--mobile-action-gap) +
-      18px
-    );
+    --mobile-stack-gap: 10px;
   }
 
   body {
@@ -2108,7 +2101,7 @@ h2 {
 
   body.is-game-active .game-setup {
     min-height: 0;
-    padding-top: var(--mobile-game-content-top);
+    padding-top: 0;
   }
 
   .home-showcase,
@@ -2121,6 +2114,16 @@ h2 {
     height: var(--mobile-balls-height);
     padding: 2px 0 0;
     transform: translateX(-50%);
+  }
+
+  body.is-game-active .home-showcase,
+  body.is-game-active .home-showcase.is-game-showcase {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    margin: 0 0 var(--mobile-stack-gap);
+    transform: none;
   }
 
   .showcase-glass {
@@ -2159,15 +2162,21 @@ h2 {
   }
 
   body.is-game-active .round-actions:not(.is-hidden) {
-    position: fixed;
-    top: calc(var(--mobile-topbar-height) + var(--mobile-balls-height) + var(--mobile-action-gap));
+    position: relative;
+    top: auto;
     bottom: auto;
-    left: 50%;
+    left: auto;
     z-index: 8;
-    width: calc(100vw - 20px);
+    width: 100%;
     min-height: var(--mobile-action-height);
+    margin: 0 0 var(--mobile-stack-gap);
     gap: 8px;
-    transform: translateX(-50%);
+    transform: none;
+  }
+
+  body.is-game-active .round-actions.is-entering:not(.is-hidden),
+  body.is-game-active .round-actions.is-leaving-down:not(.is-hidden) {
+    animation: none;
   }
 
   body.is-game-active .draw-button {

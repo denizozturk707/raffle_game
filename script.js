@@ -33,6 +33,7 @@ const drawButton = document.querySelector("#drawButton");
 const rowDrawButton = document.querySelector("#rowDrawButton");
 const roundActions = document.querySelector("#roundActions");
 const cardsGrid = document.querySelector("#cardsGrid");
+const cardsSectionElement = document.querySelector(".cards-section");
 const sliderPanel = document.querySelector(".slider-panel");
 const topbar = document.querySelector(".topbar");
 const openHowPanel = document.querySelector("#openHowPanel");
@@ -793,6 +794,7 @@ function renderCardsInSliderPlace(cardCount) {
   }
 
   sliderPanel.replaceChildren(resultGrid);
+  homeShowcase.after(roundActions);
   sliderPanel.classList.remove("is-leaving");
   sliderPanel.classList.add("is-card-result");
   sliderPanel.dataset.cardCount = cardCount;
@@ -852,6 +854,7 @@ function bindCardSelectionControls(cardCountToRestore) {
 
 function restoreCardSelection() {
   document.body.classList.remove("is-game-active");
+  cardsSectionElement.append(roundActions);
   sliderPanel.classList.remove("is-card-result", "is-leaving");
   sliderPanel.removeAttribute("data-card-count");
   sliderPanel.innerHTML = initialSliderPanelContent;
