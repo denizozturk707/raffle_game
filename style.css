@@ -2096,7 +2096,7 @@ h2 {
   .game-setup {
     display: block;
     min-height: calc(100dvh - var(--mobile-topbar-height));
-    padding: calc(var(--mobile-topbar-height) + var(--mobile-balls-height) + 10px) 0 0;
+    padding: var(--mobile-topbar-height) 0 0;
   }
 
   body.is-game-active .game-setup {
@@ -2106,24 +2106,20 @@ h2 {
 
   .home-showcase,
   .home-showcase.is-game-showcase {
-    position: fixed;
-    top: var(--mobile-topbar-height);
-    left: 50%;
+    position: relative;
+    top: auto;
+    left: auto;
     z-index: 6;
-    width: calc(100vw - 14px);
+    width: 100%;
     height: var(--mobile-balls-height);
+    margin: 0 0 var(--mobile-stack-gap);
     padding: 2px 0 0;
-    transform: translateX(-50%);
+    transform: none;
   }
 
   body.is-game-active .home-showcase,
   body.is-game-active .home-showcase.is-game-showcase {
-    position: relative;
-    top: auto;
-    left: auto;
-    width: 100%;
     margin: 0 0 var(--mobile-stack-gap);
-    transform: none;
   }
 
   .showcase-glass {
