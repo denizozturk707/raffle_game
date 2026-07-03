@@ -11,6 +11,25 @@
     <button class="panel-close" type="button" data-close-panel="how" aria-label="Nasıl Oynanır panelini kapat">
       ×
     </button>
+    <div class="how-content">
+      <h2>Nasıl Oynanır?</h2>
+      <article class="how-card">
+        <span>1</span>
+        <p>Zorluğu kendin belirle ve kart adedini seç.</p>
+      </article>
+      <article class="how-card">
+        <span>2</span>
+        <p>Kendi kartlarındaki sayılardan en az 5 tanesini çekilen toplardan tuttur.</p>
+      </article>
+      <article class="how-card">
+        <span>3</span>
+        <p>7 sayıdan 5 tanesini tutturursan bronz, 6 tanesini tutturursan gümüş, hepsini tutturursan altın madalyayı kazan.</p>
+      </article>
+      <article class="how-card">
+        <span>4</span>
+        <p>İstersen tüm topları tek seferde göster ya da satır satır açarak heyecanı arttır.</p>
+      </article>
+    </div>
   </aside>
 
   <main class="app-shell">
@@ -60,7 +79,7 @@
       <div class="cards-grid" id="cardsGrid" aria-live="polite"></div>
       <div class="round-actions is-hidden" id="roundActions">
         <button class="draw-button secondary-draw-button" id="rowDrawButton" type="button" disabled>
-          Bir Kısmını Görüntüle
+          Bir Satır Görüntüle
         </button>
         <button class="draw-button" id="drawButton" type="button" disabled>
           Tüm Topları Görüntüle
