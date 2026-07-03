@@ -519,6 +519,20 @@ button {
   animation: buttonLabelFadeIn 260ms ease both;
 }
 
+.is-i18n-fading-out {
+  opacity: 0;
+  filter: blur(5px);
+  transform: translateY(-4px);
+  transition:
+    opacity 260ms ease,
+    filter 260ms ease,
+    transform 260ms ease;
+}
+
+.is-i18n-fading-in {
+  animation: buttonLabelFadeIn 260ms ease both;
+}
+
 .secondary-draw-button {
   background: var(--green);
   box-shadow: 0 12px 26px rgba(31, 122, 82, 0.24);

@@ -48,14 +48,64 @@ let actionLockTimer;
 let topbarModeTimer;
 let languageButtonTimer;
 let homeShowcaseNumbers = [];
+let currentLanguage = "tr";
+
+const TRANSLATIONS = {
+  tr: {
+    title: "Çekiliş Oyunu",
+    howPanelClose: "Nasıl Oynanır panelini kapat",
+    howButton: "Nasıl Oynanır ?",
+    howButtonAria: "Nasıl Oynanır",
+    homeButtonAria: "Ana menüye dön",
+    languageAria: "Dil seçeneği",
+    gameSetupAria: "Kart ayarı",
+    cardsSectionAria: "Oluşturulan kartlar",
+    cardCount: "Kart adedi",
+    createCards: "Kartları Oluştur",
+    revealRow: "Bir Satır Görüntüle",
+    revealAll: "Tüm Topları Görüntüle",
+    selectCardCount: "Kart Adedi Seç",
+    replay: "Tekrar Oyna",
+    howTitle: "Nasıl Oynanır?",
+    howStep1: "Zorluğu kendin belirle ve kart adedini seç.",
+    howStep2: "Kendi kartlarındaki sayılardan en az 5 tanesini çekilen toplardan tuttur.",
+    howStep3: "7 sayıdan 5 tanesini tutturursan bronz, 6 tanesini tutturursan gümüş, hepsini tutturursan altın madalyayı kazan.",
+    howStep4: "İstersen tüm topları tek seferde göster ya da satır satır açarak heyecanı arttır."
+  },
+  en: {
+    title: "Raffle Game",
+    howPanelClose: "Close How to Play panel",
+    howButton: "How to Play ?",
+    howButtonAria: "How to Play",
+    homeButtonAria: "Return to main menu",
+    languageAria: "Language option",
+    gameSetupAria: "Card setup",
+    cardsSectionAria: "Generated cards",
+    cardCount: "Card amount",
+    createCards: "Create Cards",
+    revealRow: "Reveal One Row",
+    revealAll: "Reveal All Balls",
+    selectCardCount: "Select Card Count",
+    replay: "Play Again",
+    howTitle: "How to Play?",
+    howStep1: "Choose your difficulty by selecting how many cards you want.",
+    howStep2: "Match at least 5 numbers on your cards with the drawn balls.",
+    howStep3: "Match 5 of 7 for bronze, 6 of 7 for silver, and all 7 numbers for the gold medal.",
+    howStep4: "Reveal all balls at once or open them row by row to make a stir."
+  }
+};
+
+function t(key) {
+  return TRANSLATIONS[currentLanguage][key];
+}
 
 function setTopbarGameMode(isGameMode) {
   const currentGameMode = topbar.classList.contains("is-game-topbar");
-  const nextLabel = isGameMode ? "" : "Nasıl Oynanır ?";
+  const nextLabel = isGameMode ? "" : t("howButton");
   const currentLabel = openHowPanel.querySelector(".menu-button-label");
 
   window.clearTimeout(topbarModeTimer);
-  openHowPanel.setAttribute("aria-label", isGameMode ? "Ana menüye dön" : "Nasıl Oynanır");
+  openHowPanel.setAttribute("aria-label", isGameMode ? t("homeButtonAria") : t("howButtonAria"));
   openHowPanel.setAttribute("aria-expanded", "false");
 
   if (currentGameMode === isGameMode && currentLabel?.textContent === nextLabel) {
@@ -114,10 +164,41 @@ function getButtonLabel(button) {
 }
 
 function setButtonText(button, text) {
+  if (!button) {
+    return;
+  }
+
   getButtonLabel(button).textContent = text;
 }
 
+function setTextSmooth(element, text, smooth = true) {
+  if (!element || element.textContent.trim() === text) {
+    return;
+  }
+
+  if (!smooth) {
+    element.textContent = text;
+    return;
+  }
+
+  element.classList.add("is-i18n-fading-out");
+
+  window.setTimeout(() => {
+    element.textContent = text;
+    element.classList.remove("is-i18n-fading-out");
+    element.classList.add("is-i18n-fading-in");
+
+    window.setTimeout(() => {
+      element.classList.remove("is-i18n-fading-in");
+    }, BUTTON_TEXT_FADE_MS);
+  }, BUTTON_TEXT_FADE_MS);
+}
+
 function setButtonTextSmooth(button, text, delay = 0) {
+  if (!button) {
+    return;
+  }
+
   const label = getButtonLabel(button);
 
   window.setTimeout(() => {
@@ -133,6 +214,71 @@ function setButtonTextSmooth(button, text, delay = 0) {
       }, BUTTON_TEXT_FADE_MS);
     }, BUTTON_TEXT_FADE_MS);
   }, delay);
+}
+
+function setTranslatedButtonText(button, text, smooth = true) {
+  if (smooth) {
+    setButtonTextSmooth(button, text);
+    return;
+  }
+
+  setButtonText(button, text);
+}
+
+function updateLanguageButton(smooth = true) {
+  const targetLanguage = currentLanguage === "tr" ? "en" : "tr";
+
+  languageButton.dataset.language = targetLanguage;
+  languageButton.setAttribute("aria-label", t("languageAria"));
+  setTextSmooth(languageButton, targetLanguage === "en" ? "ENG" : "TR", smooth);
+}
+
+function getRoundButtonLabels() {
+  if (isDrawComplete) {
+    return {
+      row: t("selectCardCount"),
+      draw: t("replay")
+    };
+  }
+
+  return {
+    row: t("revealRow"),
+    draw: t("revealAll")
+  };
+}
+
+function applyTranslations(smooth = true) {
+  const howTitle = document.querySelector(".how-content h2");
+  const howTexts = document.querySelectorAll(".how-card p");
+  const sliderLabel = document.querySelector(".slider-label");
+  const gameSetup = document.querySelector(".game-setup");
+  const cardsSection = document.querySelector(".cards-section");
+  const panelClose = document.querySelector("[data-close-panel='how']");
+  const currentGameMode = topbar.classList.contains("is-game-topbar");
+  const roundLabels = getRoundButtonLabels();
+
+  document.documentElement.lang = currentLanguage;
+  document.title = t("title");
+  openHowPanel.setAttribute("aria-label", currentGameMode ? t("homeButtonAria") : t("howButtonAria"));
+  languageButton.setAttribute("aria-label", t("languageAria"));
+  gameSetup?.setAttribute("aria-label", t("gameSetupAria"));
+  cardsSection?.setAttribute("aria-label", t("cardsSectionAria"));
+  panelClose?.setAttribute("aria-label", t("howPanelClose"));
+
+  if (!currentGameMode) {
+    setTextSmooth(openHowPanel.querySelector(".menu-button-label"), t("howButton"), smooth);
+  }
+
+  setTextSmooth(howTitle, t("howTitle"), smooth);
+  setTextSmooth(howTexts[0], t("howStep1"), smooth);
+  setTextSmooth(howTexts[1], t("howStep2"), smooth);
+  setTextSmooth(howTexts[2], t("howStep3"), smooth);
+  setTextSmooth(howTexts[3], t("howStep4"), smooth);
+  setTextSmooth(sliderLabel, t("cardCount"), smooth);
+  setTranslatedButtonText(createCardsButton, t("createCards"), smooth);
+  setTranslatedButtonText(rowDrawButton, roundLabels.row, smooth);
+  setTranslatedButtonText(drawButton, roundLabels.draw, smooth);
+  updateLanguageButton(smooth);
 }
 
 function getAnimationLockDuration(revealedCount) {
@@ -634,8 +780,8 @@ function renderCardsInSliderPlace(cardCount) {
   rowDrawButton.classList.remove("is-hidden");
   rowDrawButton.classList.remove("is-action-locked");
   drawButton.classList.remove("is-action-locked");
-  setButtonText(rowDrawButton, "Bir Satır Görüntüle");
-  setButtonText(drawButton, "Tüm Topları Görüntüle");
+  setButtonText(rowDrawButton, t("revealRow"));
+  setButtonText(drawButton, t("revealAll"));
   drawButton.title = "";
   sortCardNumbers();
 }
@@ -686,7 +832,8 @@ function restoreCardSelection() {
   rowDrawButton.classList.remove("is-hidden");
   rowDrawButton.classList.remove("is-action-locked");
   drawButton.classList.remove("is-action-locked");
-  setButtonText(drawButton, "Tüm Topları Görüntüle");
+  setButtonText(rowDrawButton, t("revealRow"));
+  setButtonText(drawButton, t("revealAll"));
   hasDrawnNumbers = false;
   currentDrawNumbers = [];
   currentDrawNumberSet = new Set();
@@ -697,6 +844,7 @@ function restoreCardSelection() {
   cardsGrid.className = "cards-grid";
   restoreHomeShowcase();
   bindCardSelectionControls(lastCardCount);
+  applyTranslations(false);
 }
 
 function openPanel(panelName) {
@@ -813,8 +961,8 @@ function completeDrawView(lockDuration = getAnimationLockDuration(DRAW_BALL_COUN
   hasDrawnNumbers = true;
   isDrawComplete = true;
   rowDrawButton.classList.remove("is-hidden");
-  setButtonTextSmooth(rowDrawButton, "Kart Adedi Seç");
-  setButtonTextSmooth(drawButton, "Tekrar Oyna");
+  setButtonTextSmooth(rowDrawButton, t("selectCardCount"));
+  setButtonTextSmooth(drawButton, t("replay"));
   lockRoundActions(lockDuration);
 }
 
@@ -826,8 +974,8 @@ function completeDrawEarly() {
   hasDrawnNumbers = true;
   isDrawComplete = true;
   rowDrawButton.classList.remove("is-hidden");
-  setButtonTextSmooth(rowDrawButton, "Kart Adedi Seç");
-  setButtonTextSmooth(drawButton, "Tekrar Oyna");
+  setButtonTextSmooth(rowDrawButton, t("selectCardCount"));
+  setButtonTextSmooth(drawButton, t("replay"));
   lockRoundActions(lockDuration);
 }
 
@@ -874,6 +1022,7 @@ function resetGame() {
 
 bindCardSelectionControls();
 renderHomeShowcase();
+applyTranslations(false);
 
 openHowPanel.addEventListener("click", () => {
   if (topbar.classList.contains("is-game-topbar")) {
@@ -889,12 +1038,11 @@ openHowPanel.addEventListener("click", () => {
 });
 
 languageButton.addEventListener("click", () => {
-  const nextLanguage = languageButton.dataset.language === "tr" ? "en" : "tr";
+  currentLanguage = currentLanguage === "tr" ? "en" : "tr";
 
   window.clearTimeout(languageButtonTimer);
   languageButton.classList.add("is-language-switching");
-  languageButton.dataset.language = nextLanguage;
-  languageButton.textContent = nextLanguage === "tr" ? "TR" : "ENG";
+  applyTranslations(true);
 
   languageButtonTimer = window.setTimeout(() => {
     languageButton.classList.remove("is-language-switching");
